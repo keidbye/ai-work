@@ -38,6 +38,16 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	});
 
 	/**
+	 * 特殊考勤规则员工名单
+	 * 统计规则：工作日19~21点加班小时数，21~次日凌晨5点加班小时数
+	 * @param   姓名
+	 *
+	 */
+	public static List<String> FILTER_NAME_LIST = Arrays.asList(new String[] {
+			"张三", "李四"
+	});
+
+	/**
 	 * 考勤逻辑：
 	 * 
 	 * 1、头天晚加到22点，次若上午10：00前打卡算正常；否则算当天迟到；  -- 废弃
@@ -49,13 +59,15 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * 3、请假、迟到、未打卡一次扣除一次加班补贴
 	 * 4、休息日加班补贴，工作时长一天>4小时 <8小时 算1次； >8小时算2次； 一天最多算2次
 	 *
-	 * hourNum：		小时数
-	 * name:			姓名
-	 * leaveNum：		休假数
-	 * noCheckInNum：	未打卡数
-	 * lateNum：		迟到数
-	 * dayNum：			正常打卡数
-	 * restDayWordNum：	休息日工作时长
+	 * hourNum：			小时数（普通员工19:00后，特殊规则员工不使用此字段）
+	 * hour19To21Num：	19:00-21:00 加班小时数（特殊规则员工）
+	 * hour21To05Num：	21:00-次日05:00 加班小时数（特殊规则员工）
+	 * name:				姓名
+	 * leaveNum：			休假数
+	 * noCheckInNum：		未打卡数
+	 * lateNum：			迟到数
+	 * dayNum：				正常打卡数
+	 * restDayWordNum：		休息日工作时长
 	 **/
 
 	public static void main(String[] args) {
@@ -70,7 +82,8 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		for (Map<String, Object> map : counts) {
 			System.out.println(map.get("name") + "-天数：" + map.get("dayNum") + "-小时数：" + map.get("hourNum") + "-请假数："
 					+ map.get("leaveNum") + "-未打卡数：" + map.get("noCheckInNum") + "-迟到天数：" + map.get("lateNum")
-					+ "-周末小时：" + map.get("restDayWordNum") + "-周末补贴次数：" + map.get("subsidyNum"));
+					+ "-周末小时：" + map.get("restDayWordNum") + "-周末补贴次数：" + map.get("subsidyNum")
+					+ "-19:00-21:00加班小时：" + map.get("hour19To21Num") + "-21:00-05:00加班小时：" + map.get("hour21To05Num"));
 		}
 
 		// 3.表中单人的记录 --> {hourNum=36, name=雷杰飞, noCheckInNum=1, dayNum=18 }
@@ -113,6 +126,16 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * 休息日补贴次数
 	 */
 	private static Map<String,Integer> subsidyNumMap = new HashMap<>();
+
+	/**
+	 * 19:00-21:00 加班小时数（特殊规则员工）
+	 */
+	private static Map<String,Integer> hour19To21NumMap = new HashMap<>();
+
+	/**
+	 * 21:00-次日05:00 加班小时数（特殊规则员工）
+	 */
+	private static Map<String,Integer> hour21To05NumMap = new HashMap<>();
 
 	/**
 	 * 缓存的数据
@@ -291,17 +314,29 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			AtomicInteger dayNum = new AtomicInteger();
 			AtomicInteger hourNum = new AtomicInteger();
 			AtomicInteger noCheckInNum = new AtomicInteger();
+			// 初始化特殊规则员工的加班统计
+			if (FILTER_NAME_LIST.contains(key)) {
+				hour19To21NumMap.put(key, 0);
+				hour21To05NumMap.put(key, 0);
+			}
 
 			List<WorkVo> workVos = listMap.get(key);
+			boolean isSpecialEmployee = FILTER_NAME_LIST.contains(key);
 
 			workVos.stream().forEach(workVo -> {
-				Long num = calculateHoursDifference(workVo.getEndTime(), "19:00");
-				if (num >= 2) {
-					dayNum.getAndIncrement();
+				if (isSpecialEmployee) {
+					// 特殊规则员工：计算19:00-21:00和21:00-05:00两个时段的加班小时数
+					calculateSpecialOvertimeHours(workVo, key);
+				} else {
+					// 普通员工：使用原有逻辑计算19:00后的加班小时数
+					Long num = calculateHoursDifference(workVo.getEndTime(), "19:00");
+					if (num >= 2) {
+						dayNum.getAndIncrement();
+					}
+					hourNum.addAndGet(num.intValue());
 				}
-				hourNum.addAndGet(num.intValue());
 
-				// 未打卡天数 “最晚”时间早于12点
+				// 未打卡天数 "最晚"时间早于12点
 				if (isTimeBefore(workVo.getEndTime(), "10:00")) {
 					noCheckInNum.getAndIncrement();
 				}
@@ -319,6 +354,10 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			map.put("leaveNum", leaveMap.get(key) == null?0:leaveMap.get(key));
 			map.put("restDayWordNum", restDayNumMap.get(key) == null?0:roundToOneDecimal(restDayNumMap.get(key)));
 			map.put("subsidyNum", subsidyNumMap.get(key) == null?0:subsidyNumMap.get(key));
+
+			// 特殊规则员工：添加两个时段的加班小时数
+			map.put("hour19To21Num", hour19To21NumMap.getOrDefault(key, 0));
+			map.put("hour21To05Num", hour21To05NumMap.getOrDefault(key, 0));
 
 			countMap.add(map);
 		}
@@ -464,6 +503,70 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		return getCounts(fileName).get(0);
 	}
 
+
+	/**
+	 * 计算特殊规则员工的加班小时数
+	 * 19:00-21:00 和 21:00-次日05:00 两个时段
+	 *
+	 * @param workVo 考勤记录
+	 * @param employeeName 员工姓名
+	 */
+	private static void calculateSpecialOvertimeHours(WorkVo workVo, String employeeName) {
+		String endTime = workVo.getEndTime();
+		boolean isNextDay = endTime.contains("次日");
+
+		try {
+			// 解析结束时间
+			String endTimeStr = isNextDay ? endTime.replace("次日", "").trim() : endTime;
+			if (endTimeStr.isEmpty()) {
+				return;
+			}
+
+			LocalTime endLocalTime = LocalTime.parse(endTimeStr, formatter);
+
+			// 19:00 的基准时间
+			LocalTime time19 = LocalTime.of(19, 0);
+			LocalTime time21 = LocalTime.of(21, 0);
+			LocalTime time05 = LocalTime.of(5, 0);
+
+			if (isNextDay) {
+				// 加班到次日
+				// 19:00-21:00: 2小时
+				hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0) + 2);
+
+				// 21:00-24:00: 3小时
+				int hours21To24 = 3;
+				hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + hours21To24);
+
+				// 次日 00:00-05:00
+				if (endLocalTime.isBefore(time05) || endLocalTime.equals(time05)) {
+					int hoursNextDay = (int) Duration.between(LocalTime.MIN, endLocalTime).toHours();
+					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + hoursNextDay);
+				} else if (endLocalTime.isAfter(time05)) {
+					// 如果超过5点，只算到5点
+					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + 5);
+				}
+			} else {
+				// 当天加班
+				if (endLocalTime.isBefore(time21) || endLocalTime.equals(time21)) {
+					// 19:00-21:00 之间加班
+					if (endLocalTime.isAfter(time19)) {
+						int hours = (int) Duration.between(time19, endLocalTime).toHours();
+						hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0) + hours);
+					}
+				} else {
+					// 19:00-21:00: 2小时
+					hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0) + 2);
+
+					// 21:00-结束时间
+					int hours21ToEnd = (int) Duration.between(time21, endLocalTime).toHours();
+					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + hours21ToEnd);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	/**
 	 * 提取字符串中的数字（包括小数）
