@@ -575,6 +575,10 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * @return 提取到的数字（如果没有数字，则返回 null）
 	 */
 	public static String extractNumber(String input) {
+		if (input == null) {
+			return "";
+		}
+
 		// 定义正则表达式，用于匹配整数或小数
 		String regex = "-?\\d+\\.?\\d*";
 		Pattern pattern = Pattern.compile(regex);
