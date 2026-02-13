@@ -44,11 +44,26 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 
 	public WorkDataListener() {
 		// 默认空列表
+		this.REST_DAY_LIST = new ArrayList<>();
+		this.FILTER_NAME_LIST = new ArrayList<>();
+		initializeMaps();
 	}
 
 	public WorkDataListener(List<String> restDayList, List<String> filterNameList) {
 		this.REST_DAY_LIST = restDayList != null ? restDayList : new ArrayList<>();
 		this.FILTER_NAME_LIST = filterNameList != null ? filterNameList : new ArrayList<>();
+		initializeMaps();
+	}
+
+	private void initializeMaps() {
+		this.noCheckInMap = new HashMap<>();
+		this.leaveMap = new HashMap<>();
+		this.lateNumMap = new HashMap<>();
+		this.restDayNumMap = new HashMap<>();
+		this.subsidyNumMap = new HashMap<>();
+		this.hour19To21NumMap = new HashMap<>();
+		this.hour21To05NumMap = new HashMap<>();
+		this.countMap = new ArrayList<>();
 	}
 
 	/**
@@ -109,37 +124,37 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	/**
 	 * 未打卡次数
 	 */
-	private static Map<String,Integer> noCheckInMap = new HashMap<>();
+	private Map<String,Integer> noCheckInMap = new HashMap<>();
 
 	/**
 	 * 请假
 	 */
-	private static Map<String,Integer> leaveMap = new HashMap<>();
+	private Map<String,Integer> leaveMap = new HashMap<>();
 
 	/**
 	 * 迟到次数
 	 */
-	private static Map<String,Integer> lateNumMap = new HashMap<>();
+	private Map<String,Integer> lateNumMap = new HashMap<>();
 
 	/**
 	 * 休息日工作时长数
 	 */
-	private static Map<String,Float> restDayNumMap = new HashMap<>();
+	private Map<String,Float> restDayNumMap = new HashMap<>();
 
 	/**
 	 * 休息日补贴次数
 	 */
-	private static Map<String,Integer> subsidyNumMap = new HashMap<>();
+	private Map<String,Integer> subsidyNumMap = new HashMap<>();
 
 	/**
 	 * 19:00-21:00 加班小时数（特殊规则员工）
 	 */
-	private static Map<String,Integer> hour19To21NumMap = new HashMap<>();
+	private Map<String,Integer> hour19To21NumMap = new HashMap<>();
 
 	/**
 	 * 21:00-次日05:00 加班小时数（特殊规则员工）
 	 */
-	private static Map<String,Integer> hour21To05NumMap = new HashMap<>();
+	private Map<String,Integer> hour21To05NumMap = new HashMap<>();
 
 	/**
 	 * 缓存的数据
