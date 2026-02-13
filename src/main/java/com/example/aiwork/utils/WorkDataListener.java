@@ -27,15 +27,12 @@ import java.util.stream.Collectors;
  */
 public class WorkDataListener implements ReadListener<WorkVo> {
 
-
 	/**
 	 * 填入当月休息日日期，统计加班小时数
 	 * @param   日期 yyyy/MM/dd  如2024/12/21
 	 *
 	 */
-	public static List<String> REST_DAY_LIST = Arrays.asList(new String[] {
-			"2026/01/01", "2026/01/02", "2026/01/03","2026/01/10", "2026/01/11", "2026/01/18", "2026/01/24", "2026/01/25"
-	});
+	private List<String> REST_DAY_LIST = new ArrayList<>();
 
 	/**
 	 * 特殊考勤规则员工名单
@@ -43,9 +40,16 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * @param   姓名
 	 *
 	 */
-	public static List<String> FILTER_NAME_LIST = Arrays.asList(new String[] {
-			"顾良聪"
-	});
+	private List<String> FILTER_NAME_LIST = new ArrayList<>();
+
+	public WorkDataListener() {
+		// 默认空列表
+	}
+
+	public WorkDataListener(List<String> restDayList, List<String> filterNameList) {
+		this.REST_DAY_LIST = restDayList != null ? restDayList : new ArrayList<>();
+		this.FILTER_NAME_LIST = filterNameList != null ? filterNameList : new ArrayList<>();
+	}
 
 	/**
 	 * 考勤逻辑：
@@ -154,11 +158,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * 超过10点的数据
 	 */
 	private Map<String, WorkVo> lateDataMap = new HashMap<>();
-	private static List<Map<String, Object>> countMap = new ArrayList<>();
-
-	public WorkDataListener() {
-		countMap = new ArrayList<>();
-	}
+	private List<Map<String, Object>> countMap = new ArrayList<>();
 
 	/**
 	 * 这个每一条数据解析都会来调用
@@ -468,7 +468,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * 计算休息日工作时长
 	 * @param work
 	 */
-	public static void countRestDayWorkNum(WorkVo work){
+	private void countRestDayWorkNum(WorkVo work){
 
 		if (StringUtils.isEmpty(work.getDataTime())){
 			return;
@@ -497,10 +497,18 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	}
 
 	public static List<Map<String, Object>> getCounts(String fileName) {
-		// read方法的第一个参数时：读取的文件路径，第二个参数是：实体类的class，第三个参数是：监听器
-		EasyExcel.read(fileName, WorkVo.class, new WorkDataListener()).sheet().headRowNumber(4).doRead();
-		return countMap;
+		return getCounts(fileName, null, null);
+	}
 
+	public static List<Map<String, Object>> getCounts(String fileName, List<String> restDayList, List<String> filterNameList) {
+		// read方法的第一个参数时：读取的文件路径，第二个参数是：实体类的class，第三个参数是：监听器
+		WorkDataListener listener = new WorkDataListener(restDayList, filterNameList);
+		EasyExcel.read(fileName, WorkVo.class, listener).sheet().headRowNumber(4).doRead();
+		return listener.getCountMap();
+	}
+
+	public List<Map<String, Object>> getCountMap() {
+		return countMap;
 	}
 
 	public static Map<String, Object> getCount(String fileName) {
@@ -515,7 +523,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * @param workVo 考勤记录
 	 * @param employeeName 员工姓名
 	 */
-	private static void calculateSpecialOvertimeHours(WorkVo workVo, String employeeName) {
+	private void calculateSpecialOvertimeHours(WorkVo workVo, String employeeName) {
 		String endTime = workVo.getEndTime();
 		boolean isNextDay = endTime.contains("次日");
 
