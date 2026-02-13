@@ -182,33 +182,33 @@ public class AttendanceController {
     public static class ExportData {
         @ExcelProperty("姓名")
         @ColumnWidth(12)
-        private String name;
+        public String name;
 
         @ExcelProperty("天数")
-        private Integer dayNum;
+        public Integer dayNum;
 
         @ExcelProperty("小时数")
-        private Integer hourNum;
+        public Integer hourNum;
 
         @ExcelProperty("请假数")
-        private Integer leaveNum;
+        public Integer leaveNum;
 
         @ExcelProperty("未打卡数")
-        private Integer noCheckInNum;
+        public Integer noCheckInNum;
 
         @ExcelProperty("迟到天数")
-        private Integer lateNum;
+        public Integer lateNum;
 
         @ExcelProperty("周末小时")
-        private Float restDayWordNum;
+        public Float restDayWordNum;
 
         @ExcelProperty("周末补贴次数")
-        private Integer subsidyNum;
+        public Integer subsidyNum;
 
         @ExcelProperty("19-21加班")
-        private Integer hour19To21Num;
+        public Integer hour19To21Num;
 
         @ExcelProperty("21-05加班")
-        private Integer hour21To05Num;
+        public Integer hour21To05Num;
     }
 }
