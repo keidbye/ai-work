@@ -492,8 +492,21 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		String dataTime = work.getDataTime().split(" ")[0];
 		String workHourNum = extractNumber(work.getWorkHourNum());
 
+		// 如果数据时间为空，跳过
+		if (StringUtils.isEmpty(dataTime) || StringUtils.isEmpty(workHourNum)){
+			return;
+		}
+
+		// 判断是否为休息日（如果是星期六或星期日且在列表中，或者列表为空时自动识别周末）
+		boolean isRestDay = REST_DAY_LIST.contains(dataTime);
+		if (!isRestDay && REST_DAY_LIST.isEmpty()) {
+			// 列表为空时，自动识别星期六和星期日
+			String weekDay = work.getDataTime();
+			isRestDay = weekDay.contains("星期六") || weekDay.contains("星期日");
+		}
+
 		// 符合条件则累加加班时间
-		if (REST_DAY_LIST.contains(dataTime) && workHourNum.matches("[-+]?[0-9]*\\.?[0-9]+") ){
+		if (isRestDay && workHourNum.matches("[-+]?[0-9]*\\.?[0-9]+") ){
 			Float num = restDayNumMap.get(work.getName()) == null? 0f :restDayNumMap.get(work.getName());
 			restDayNumMap.put(work.getName(),num + Float.valueOf(workHourNum));
 
