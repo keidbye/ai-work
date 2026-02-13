@@ -11,22 +11,22 @@ import com.alibaba.excel.annotation.ExcelProperty;
 public class WorkVo {
 
 
-    @ExcelProperty(value = {"时间","时间"})
+    @ExcelProperty(value = {"时间","时间"}, index = 0)
     private String dataTime;
 
-    @ExcelProperty(value = {"姓名","姓名"})
+    @ExcelProperty(value = {"姓名","姓名"}, index = 1)
     private String name;
 
-    @ExcelProperty(value = {"考勤概况","最早"})
+    @ExcelProperty(value = {"考勤概况","最早"}, index = 8)
     private String startTime;
 
-    @ExcelProperty(value = {"考勤概况","最晚"})
+    @ExcelProperty(value = {"考勤概况","最晚"}, index = 9)
     private String endTime;
 
-    @ExcelProperty(value = {"考勤概况","实际工作时长(小时)"})
+    @ExcelProperty(value = {"考勤概况","实际工作时长(小时)"}, index = 12)
     private String workHourNum;
 
-    @ExcelProperty(value = {"考勤概况","假勤申请"})
+    @ExcelProperty(value = {"考勤概况","假勤申请"}, index = 13)
     private String vacation;
 
 

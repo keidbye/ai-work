@@ -34,7 +34,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 *
 	 */
 	public static List<String> REST_DAY_LIST = Arrays.asList(new String[] {
-			"2025/07/27", "2025/07/26", "2025/07/20","2025/07/13", "2025/07/12", "2025/07/06"
+			"2026/01/01", "2026/01/02", "2026/01/03","2026/01/10", "2026/01/11", "2026/01/18", "2026/01/24", "2026/01/25"
 	});
 
 	/**
@@ -44,7 +44,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 *
 	 */
 	public static List<String> FILTER_NAME_LIST = Arrays.asList(new String[] {
-			"张三", "李四"
+			"顾良聪"
 	});
 
 	/**
@@ -73,7 +73,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	public static void main(String[] args) {
 
 		// 1.设置写入文件夹地址和excel文件名称
-		String filename = "C:\\Users\\12491\\Desktop\\上下班打卡_日报_20260101-20260131.xlsx";
+		String filename = "/opt/excel/上下班打卡_日报_20260101-20260131(1).xlsx";
 
 		// 2.表中存在多人的记录 --> [{hourNum=33, leaveNum=0, name=雷杰飞, noCheckInNum=0, lateNum=0, dayNum=15}]
 		List<Map<String, Object>> counts = getCounts(filename);
@@ -494,7 +494,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 
 	public static List<Map<String, Object>> getCounts(String fileName) {
 		// read方法的第一个参数时：读取的文件路径，第二个参数是：实体类的class，第三个参数是：监听器
-		EasyExcel.read(fileName, WorkVo.class, new WorkDataListener()).sheet().headRowNumber(3).doRead();
+		EasyExcel.read(fileName, WorkVo.class, new WorkDataListener()).sheet().headRowNumber(4).doRead();
 		return countMap;
 
 	}
