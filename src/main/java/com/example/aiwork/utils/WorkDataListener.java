@@ -327,14 +327,14 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 				if (isSpecialEmployee) {
 					// 特殊规则员工：计算19:00-21:00和21:00-05:00两个时段的加班小时数
 					calculateSpecialOvertimeHours(workVo, key);
-				} else {
-					// 普通员工：使用原有逻辑计算19:00后的加班小时数
-					Long num = calculateHoursDifference(workVo.getEndTime(), "19:00");
-					if (num >= 2) {
-						dayNum.getAndIncrement();
-					}
-					hourNum.addAndGet(num.intValue());
 				}
+
+				// 统一统计：工作日加班小时数和天数
+				Long num = calculateHoursDifference(workVo.getEndTime(), "19:00");
+				if (num >= 2) {
+					dayNum.getAndIncrement();
+				}
+				hourNum.addAndGet(num.intValue());
 
 				// 未打卡天数 "最晚"时间早于12点
 				if (isTimeBefore(workVo.getEndTime(), "10:00")) {
@@ -353,7 +353,10 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			map.put("lateNum", lateNumMap.get(key));
 			map.put("leaveNum", leaveMap.get(key) == null?0:leaveMap.get(key));
 			map.put("restDayWordNum", restDayNumMap.get(key) == null?0:roundToOneDecimal(restDayNumMap.get(key)));
-			map.put("subsidyNum", subsidyNumMap.get(key) == null?0:subsidyNumMap.get(key));
+
+			// 特殊规则员工不统计周末补贴次数
+			int subsidyNum = isSpecialEmployee ? 0 : (subsidyNumMap.get(key) == null ? 0 : subsidyNumMap.get(key));
+			map.put("subsidyNum", subsidyNum);
 
 			// 特殊规则员工：添加两个时段的加班小时数
 			map.put("hour19To21Num", hour19To21NumMap.getOrDefault(key, 0));
