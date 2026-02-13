@@ -94,8 +94,18 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		// 1.设置写入文件夹地址和excel文件名称
 		String filename = "/opt/excel/上下班打卡_日报_20260101-20260131(1).xlsx";
 
+		// 设置休息日列表
+		List<String> restDayList = Arrays.asList(new String[] {
+			"2026/01/01", "2026/01/02", "2026/01/03","2026/01/10", "2026/01/11", "2026/01/18", "2026/01/24", "2026/01/25"
+		});
+
+		// 设置特殊规则员工名单
+		List<String> filterNameList = Arrays.asList(new String[] {
+			"顾良聪"
+		});
+
 		// 2.表中存在多人的记录 --> [{hourNum=33, leaveNum=0, name=雷杰飞, noCheckInNum=0, lateNum=0, dayNum=15}]
-		List<Map<String, Object>> counts = getCounts(filename);
+		List<Map<String, Object>> counts = getCounts(filename, restDayList, filterNameList);
 		// System.out.println(counts);
 
 		for (Map<String, Object> map : counts) {
@@ -497,10 +507,10 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			return;
 		}
 
-		// 判断是否为休息日（如果是星期六或星期日且在列表中，或者列表为空时自动识别周末）
+		// 判断是否为休息日
 		boolean isRestDay = REST_DAY_LIST.contains(dataTime);
 		if (!isRestDay && REST_DAY_LIST.isEmpty()) {
-			// 列表为空时，自动识别星期六和星期日
+			// 列表为空时，自动识别星期六和星期日作为休息日
 			String weekDay = work.getDataTime();
 			isRestDay = weekDay.contains("星期六") || weekDay.contains("星期日");
 		}
@@ -518,8 +528,6 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 				newNum = 1;
 			}
 			subsidyNumMap.put(work.getName(),subsidyNum == null ? 0+newNum:subsidyNum+newNum);
-
-
 		}
 
 	}
