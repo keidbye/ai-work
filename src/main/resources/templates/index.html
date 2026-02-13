@@ -168,6 +168,23 @@
             transform: none;
         }
 
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
         .btn-container {
             text-align: center;
             margin-top: 30px;
@@ -182,12 +199,19 @@
             display: block;
         }
 
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
         .results h3 {
             color: #333;
-            margin-bottom: 20px;
             font-size: 18px;
             border-left: 4px solid #28a745;
             padding-left: 12px;
+            margin: 0;
         }
 
         .table-container {
@@ -323,7 +347,10 @@
             </div>
 
             <div id="results" class="results">
-                <h3>统计结果</h3>
+                <div class="results-header">
+                    <h3>统计结果</h3>
+                    <button id="exportBtn" class="btn btn-success">📥 导出Excel</button>
+                </div>
                 <div class="table-container">
                     <table id="resultTable">
                         <thead>
@@ -353,6 +380,7 @@
         const fileInput = document.getElementById('fileInput');
         const fileInfo = document.getElementById('fileInfo');
         const calculateBtn = document.getElementById('calculateBtn');
+        const exportBtn = document.getElementById('exportBtn');
         const loading = document.getElementById('loading');
         const results = document.getElementById('results');
         const message = document.getElementById('message');
@@ -431,6 +459,48 @@
                 loading.classList.remove('show');
                 calculateBtn.disabled = false;
                 showMessage('请求失败: ' + error.message, 'error');
+            }
+        });
+
+        // 导出按钮
+        exportBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            hideMessage();
+            exportBtn.disabled = true;
+            exportBtn.textContent = '⏳ 导出中...';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('restDays', document.getElementById('restDays').value);
+            formData.append('specialNames', document.getElementById('specialNames').value);
+
+            try {
+                const response = await fetch('/export', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // 下载文件
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '考勤统计结果_' + new Date().getTime() + '.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showMessage('导出成功！', 'success');
+                } else {
+                    showMessage('导出失败', 'error');
+                }
+            } catch (error) {
+                showMessage('导出失败: ' + error.message, 'error');
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.textContent = '📥 导出Excel';
             }
         });
 
