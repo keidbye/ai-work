@@ -3,9 +3,8 @@ package com.example.aiwork.controller;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.write.style.ColumnWidth;
-import com.alibaba.excel.annotation.write.style.ContentStyle;
-import com.alibaba.excel.annotation.write.style.HeadFontStyle;
 import com.example.aiwork.utils.WorkDataListener;
+import lombok.Data;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -108,20 +107,24 @@ public class AttendanceController {
 
             Files.deleteIfExists(tempFile);
 
+            System.err.println("Export data count: " + counts.size());
+
             List<ExportData> exportDataList = new ArrayList<>();
             for (Map<String, Object> item : counts) {
                 ExportData data = new ExportData();
-                data.name = (String) item.get("name");
-                data.dayNum = getIntValue(item.get("dayNum"));
-                data.hourNum = getIntValue(item.get("hourNum"));
-                data.leaveNum = getIntValue(item.get("leaveNum"));
-                data.noCheckInNum = getIntValue(item.get("noCheckInNum"));
-                data.lateNum = getIntValue(item.get("lateNum"));
-                data.restDayWordNum = getFloatValue(item.get("restDayWordNum"));
-                data.subsidyNum = getIntValue(item.get("subsidyNum"));
-                data.hour19To21Num = getIntValue(item.get("hour19To21Num"));
-                data.hour21To05Num = getIntValue(item.get("hour21To05Num"));
+                data.setName((String) item.get("name"));
+                data.setDayNum(getIntValue(item.get("dayNum")));
+                data.setHourNum(getIntValue(item.get("hourNum")));
+                data.setLeaveNum(getIntValue(item.get("leaveNum")));
+                data.setNoCheckInNum(getIntValue(item.get("noCheckInNum")));
+                data.setLateNum(getIntValue(item.get("lateNum")));
+                data.setRestDayWordNum(getFloatValue(item.get("restDayWordNum")));
+                data.setSubsidyNum(getIntValue(item.get("subsidyNum")));
+                data.setHour19To21Num(getIntValue(item.get("hour19To21Num")));
+                data.setHour21To05Num(getIntValue(item.get("hour21To05Num")));
                 exportDataList.add(data);
+
+                System.err.println("Export: " + data.getName() + " - dayNum:" + data.getDayNum());
             }
 
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -179,36 +182,37 @@ public class AttendanceController {
                 .collect(Collectors.toList());
     }
 
+    @Data
     public static class ExportData {
         @ExcelProperty("姓名")
         @ColumnWidth(12)
-        public String name;
+        private String name;
 
         @ExcelProperty("天数")
-        public Integer dayNum;
+        private Integer dayNum;
 
         @ExcelProperty("小时数")
-        public Integer hourNum;
+        private Integer hourNum;
 
         @ExcelProperty("请假数")
-        public Integer leaveNum;
+        private Integer leaveNum;
 
         @ExcelProperty("未打卡数")
-        public Integer noCheckInNum;
+        private Integer noCheckInNum;
 
         @ExcelProperty("迟到天数")
-        public Integer lateNum;
+        private Integer lateNum;
 
         @ExcelProperty("周末小时")
-        public Float restDayWordNum;
+        private Float restDayWordNum;
 
         @ExcelProperty("周末补贴次数")
-        public Integer subsidyNum;
+        private Integer subsidyNum;
 
         @ExcelProperty("19-21加班")
-        public Integer hour19To21Num;
+        private Integer hour19To21Num;
 
         @ExcelProperty("21-05加班")
-        public Integer hour21To05Num;
+        private Integer hour21To05Num;
     }
 }
