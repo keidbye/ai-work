@@ -346,7 +346,8 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			HashMap<String, Object> map = new HashMap<>();
 			map.put("name", key);
 			map.put("dayNum", dayNum);
-			map.put("hourNum", hourNum);
+			// 特殊规则员工不统计小时数
+			map.put("hourNum", isSpecialEmployee ? 0 : hourNum);
 
 			int noCheckIn = noCheckInNum.intValue() + noCheckInMap.get(key);
 			map.put("noCheckInNum", noCheckIn>0?noCheckIn:0);
