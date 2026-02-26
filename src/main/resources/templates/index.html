@@ -178,6 +178,16 @@
             box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
         }
 
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+        }
+
         .btn-group {
             display: flex;
             gap: 15px;
@@ -372,6 +382,11 @@
                     </table>
                 </div>
             </div>
+
+            <!-- 关闭程序按钮 -->
+            <div class="btn-container">
+                <button id="shutdownBtn" class="btn btn-danger">关闭程序</button>
+            </div>
         </div>
     </div>
 
@@ -547,6 +562,24 @@
         function hideMessage() {
             message.classList.remove('show');
         }
+
+        // 关闭程序按钮
+        document.getElementById('shutdownBtn').addEventListener('click', async () => {
+            if (confirm('确定要关闭程序吗？')) {
+                try {
+                    const response = await fetch('/shutdown', {
+                        method: 'POST'
+                    });
+                    showMessage('程序已关闭', 'success');
+                    // 延迟后显示提示页面已关闭
+                    setTimeout(() => {
+                        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;color:#666;font-size:18px;">程序已关闭，您可以关闭此页面</div>';
+                    }, 500);
+                } catch (error) {
+                    showMessage('关闭失败: ' + error.message, 'error');
+                }
+            }
+        });
     </script>
 </body>
 </html>
