@@ -11,7 +11,7 @@ public class BrowserOpener {
     @EventListener(ApplicationReadyEvent.class)
     public void openBrowserAfterStartup(ApplicationReadyEvent event) {
         Environment env = event.getApplicationContext().getEnvironment();
-        String port = env.getProperty("server.port", "8080");
+        String port = env.getProperty("server.port", "9394");
         String contextPath = env.getProperty("server.servlet.context-path", "");
         String url = "http://localhost:" + port + contextPath;
 

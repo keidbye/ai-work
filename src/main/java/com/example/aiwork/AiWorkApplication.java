@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class AiWorkApplication {
 
-    private static final int PORT = 8080;
+    private static final int PORT = 9394;
 
     public static void main(String[] args) {
         // 启动前先杀掉占用端口的进程
