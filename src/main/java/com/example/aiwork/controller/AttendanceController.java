@@ -145,6 +145,8 @@ public class AttendanceController {
         if (value == null) return 0;
         if (value instanceof Integer) return (Integer) value;
         if (value instanceof AtomicInteger) return ((AtomicInteger) value).get();
+        if (value instanceof Float) return ((Float) value).intValue();
+        if (value instanceof Double) return ((Double) value).intValue();
         try {
             return Integer.parseInt(value.toString());
         } catch (Exception e) {
