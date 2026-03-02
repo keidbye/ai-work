@@ -216,7 +216,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 
 		// 统计事假/调休假/年假等等 —> 算当天未打卡
 		String vacation = data.getVacation();
-		List<String> vacationKey = Arrays.asList("年假", "事假", "病假","调休假","婚假","产假","陪产假");
+		List<String> vacationKey = Arrays.asList("年假", "事假", "病假","调休假","婚假","产假","陪产假","其他");
 
 		if (!StringUtils.isEmpty(vacation) && vacationKey.stream().anyMatch(vacation::contains)){
 			Integer leaveNum = leaveMap.get(data.getName()) ;
@@ -237,8 +237,10 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		if ( REST_DAY_LIST.contains(time[0]) ){
 			return;
 		}else if ((dataTime.contains("星期六") || dataTime.contains("星期日")) && isTimeBefore(data.getStartTime(), "10:01")){
-			// 周末10:00前打卡不算迟到，设为09:00正常
 			data.setStartTime("09:00");
+		}else if ((dataTime.contains("星期六") || dataTime.contains("星期日")) && !isTimeBefore(data.getStartTime(), "10:00")){
+			lateNumMap.put(data.getName(),lateNumMap.get(data.getName())+1);
+			data.setStartTime("09:40");
 		}
 
 

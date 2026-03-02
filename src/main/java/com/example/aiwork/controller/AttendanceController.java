@@ -120,8 +120,8 @@ public class AttendanceController {
                 data.setLateNum(getIntValue(item.get("lateNum")));
                 data.setRestDayWordNum(getFloatValue(item.get("restDayWordNum")));
                 data.setSubsidyNum(getIntValue(item.get("subsidyNum")));
-                data.setHour19To21Num(getIntValue(item.get("hour19To21Num")));
-                data.setHour21To05Num(getIntValue(item.get("hour21To05Num")));
+                data.setHour19To21Num(getFloatValue(item.get("hour19To21Num")));
+                data.setHour21To05Num(getFloatValue(item.get("hour21To05Num")));
                 exportDataList.add(data);
 
                 System.err.println("Export: " + data.getName() + " - dayNum:" + data.getDayNum());
@@ -210,9 +210,9 @@ public class AttendanceController {
         private Integer subsidyNum;
 
         @ExcelProperty("19-21加班")
-        private Integer hour19To21Num;
+        private Float hour19To21Num;
 
         @ExcelProperty("21-05加班")
-        private Integer hour21To05Num;
+        private Float hour21To05Num;
     }
 }
