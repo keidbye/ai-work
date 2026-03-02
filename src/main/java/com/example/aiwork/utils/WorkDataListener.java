@@ -159,12 +159,12 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	/**
 	 * 19:00-21:00 加班小时数（特殊规则员工）
 	 */
-	private Map<String,Integer> hour19To21NumMap = new HashMap<>();
+	private Map<String,Float> hour19To21NumMap = new HashMap<>();
 
 	/**
 	 * 21:00-次日05:00 加班小时数（特殊规则员工）
 	 */
-	private Map<String,Integer> hour21To05NumMap = new HashMap<>();
+	private Map<String,Float> hour21To05NumMap = new HashMap<>();
 
 	/**
 	 * 缓存的数据
@@ -340,8 +340,8 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			AtomicInteger noCheckInNum = new AtomicInteger();
 			// 初始化特殊规则员工的加班统计
 			if (FILTER_NAME_LIST.contains(key)) {
-				hour19To21NumMap.put(key, 0);
-				hour21To05NumMap.put(key, 0);
+				hour19To21NumMap.put(key, 0f);
+				hour21To05NumMap.put(key, 0f);
 			}
 
 			List<WorkVo> workVos = listMap.get(key);
@@ -384,8 +384,8 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			map.put("subsidyNum", subsidyNum);
 
 			// 特殊规则员工：添加两个时段的加班小时数
-			map.put("hour19To21Num", hour19To21NumMap.getOrDefault(key, 0));
-			map.put("hour21To05Num", hour21To05NumMap.getOrDefault(key, 0));
+			map.put("hour19To21Num", hour19To21NumMap.getOrDefault(key, 0f));
+			map.put("hour21To05Num", hour21To05NumMap.getOrDefault(key, 0f));
 
 			countMap.add(map);
 		}
@@ -554,6 +554,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	/**
 	 * 计算特殊规则员工的加班小时数
 	 * 19:00-21:00 和 21:00-次日05:00 两个时段
+	 * 按分钟计算：超过20分钟算半小时，超过50分钟算1小时
 	 *
 	 * @param workVo 考勤记录
 	 * @param employeeName 员工姓名
@@ -574,45 +575,68 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			// 19:00 的基准时间
 			LocalTime time19 = LocalTime.of(19, 0);
 			LocalTime time21 = LocalTime.of(21, 0);
+			LocalTime time00 = LocalTime.MIDNIGHT;
 			LocalTime time05 = LocalTime.of(5, 0);
 
 			if (isNextDay) {
 				// 加班到次日
-				// 19:00-21:00: 2小时
-				hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0) + 2);
+				// 19:00-21:00: 完整2小时
+				hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0f) + 2);
 
 				// 21:00-24:00: 3小时
-				int hours21To24 = 3;
-				hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + hours21To24);
+				hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0f) + 3);
 
-				// 次日 00:00-05:00
+				// 次日 00:00-05:00，按分钟计算
 				if (endLocalTime.isBefore(time05) || endLocalTime.equals(time05)) {
-					int hoursNextDay = (int) Duration.between(LocalTime.MIN, endLocalTime).toHours();
-					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + hoursNextDay);
+					long minutes = Duration.between(time00, endLocalTime).toMinutes();
+					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0f) + convertMinutesToHours(minutes));
 				} else if (endLocalTime.isAfter(time05)) {
-					// 如果超过5点，只算到5点
-					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + 5);
+					// 如果超过5点，只算到5点（5小时 = 300分钟）
+					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0f) + 5);
 				}
 			} else {
 				// 当天加班
 				if (endLocalTime.isBefore(time21) || endLocalTime.equals(time21)) {
-					// 19:00-21:00 之间加班
+					// 19:00-21:00 之间加班，按分钟计算
 					if (endLocalTime.isAfter(time19)) {
-						int hours = (int) Duration.between(time19, endLocalTime).toHours();
-						hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0) + hours);
+						long minutes = Duration.between(time19, endLocalTime).toMinutes();
+						hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0f) + convertMinutesToHours(minutes));
 					}
 				} else {
-					// 19:00-21:00: 2小时
-					hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0) + 2);
+					// 19:00-21:00: 完整2小时
+					hour19To21NumMap.put(employeeName, hour19To21NumMap.getOrDefault(employeeName, 0f) + 2);
 
-					// 21:00-结束时间
-					int hours21ToEnd = (int) Duration.between(time21, endLocalTime).toHours();
-					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0) + hours21ToEnd);
+					// 21:00-结束时间，按分钟计算
+					long minutes = Duration.between(time21, endLocalTime).toMinutes();
+					hour21To05NumMap.put(employeeName, hour21To05NumMap.getOrDefault(employeeName, 0f) + convertMinutesToHours(minutes));
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * 将分钟转换为小时，按规则：
+	 * 0-20分钟：0小时
+	 * 21-50分钟：0.5小时
+	 * 51分钟以上：1小时
+	 *
+	 * @param minutes 分钟数
+	 * @return 小时数（支持0.5小时精度）
+	 */
+	private float convertMinutesToHours(long minutes) {
+		int fullHours = (int) (minutes / 60);
+		long remainingMinutes = minutes % 60;
+
+		float additional = 0f;
+		if (remainingMinutes > 20 && remainingMinutes <= 50) {
+			additional = 0.5f;  // 半小时
+		} else if (remainingMinutes > 50) {
+			additional = 1.0f;  // 一小时
+		}
+
+		return fullHours + additional;
 	}
 
 	/**
