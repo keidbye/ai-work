@@ -249,10 +249,9 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 
 
 		if (!isTimeBefore(data.getStartTime(), "09:30")) {
-			// 统计
-			//noCheckInMap.put(data.getName(),noCheckInMap.get(data.getName())+1);
+			// 严重迟到，计入迟到次数
 			lateDataMap.put(data.getName(), data);
-			//return;
+			lateNumMap.put(data.getName(), lateNumMap.get(data.getName()) + 1);
 		}else if (!isTimeBefore(data.getStartTime(), "09:01")) {
 			// 统计
 			lateNumMap.put(data.getName(),lateNumMap.get(data.getName())+1);
