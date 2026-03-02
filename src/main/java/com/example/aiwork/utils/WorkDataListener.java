@@ -237,10 +237,8 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		if ( REST_DAY_LIST.contains(time[0]) ){
 			return;
 		}else if ((dataTime.contains("星期六") || dataTime.contains("星期日")) && isTimeBefore(data.getStartTime(), "10:01")){
+			// 周末10:00前打卡不算迟到，设为09:00正常
 			data.setStartTime("09:00");
-		}else if ((dataTime.contains("星期六") || dataTime.contains("星期日")) && !isTimeBefore(data.getStartTime(), "10:00")){
-			lateNumMap.put(data.getName(),lateNumMap.get(data.getName())+1);
-			data.setStartTime("09:40");
 		}
 
 
@@ -388,7 +386,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 				}
 				hourNum.addAndGet(num.intValue());
 
-				// 未打卡天数 "最晚"时间早于12点
+				// 未打卡天数：下班时间<10:00就算缺卡
 				if (isTimeBefore(workVo.getEndTime(), "10:00")) {
 					noCheckInNum.getAndIncrement();
 				}
