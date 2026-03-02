@@ -273,48 +273,76 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			String dateTime = data.getDataTime().split(" ")[0];
 			// 获取次日的日期
 			dateTime = subtractOneDayFromDate(dateTime, 1);
-			WorkVo workVo = lateDataMap.get(data.getName());
-			// 如果存在，证明第二天早上休息，打卡时间置为 09：00
-			if (workVo != null) {
 
-
-				String newDateTime = workVo.getDataTime().split(" ")[0];
-
-				// 当天13：30 之前算正常 -- 修改为 凌晨24点后,需早上10点打开算正常
-				String startTime = workVo.getStartTime();
-				if (!isTimeBefore(startTime,"10:00")){
-					Integer integer = lateNumMap.get(workVo.getName());
-					lateNumMap.put(workVo.getName(),integer-1);
-					//return;
-				}else if (newDateTime.equals(dateTime)) {
-					workVo.setStartTime("09:00");
-					// cachedDataList.add(workVo);
-					Integer integer = noCheckInMap.get(workVo.getName());
-					noCheckInMap.put(workVo.getName(),integer-1);
-				}
-
-			}
-		}else if (!isTimeBefore(data.getEndTime(), "23:00")) {
-			// todo 判断昨日是否为晚上10点之后,是则迟到次数-1, 后面修改为 23:00
-
-			// 处理日
-			String dateTime = data.getDataTime().split(" ")[0];
-			// 获取次日的日期
-			dateTime = subtractOneDayFromDate(dateTime, 1);
-			List<WorkVo> workVos = lateWorkVoMap.get(data.getName());
-
-			if (workVos != null){
-				for (WorkVo workVo : workVos) {
-					String newDateTime = workVo.getDataTime().split(" ")[0];
-
-					if (newDateTime.equals(dateTime)) {
-						Integer integer = lateNumMap.get(workVo.getName());
-						lateNumMap.put(workVo.getName(),integer-1);
+			// 加班到次日，次日10:00前算正常，需要抵消迟到
+			// 检查 lateDataMap（严重迟到 >=09:30）
+			WorkVo lateWorkVo = lateDataMap.get(data.getName());
+			if (lateWorkVo != null) {
+				String newDateTime = lateWorkVo.getDataTime().split(" ")[0];
+				if (newDateTime.equals(dateTime)) {
+					String startTime = lateWorkVo.getStartTime();
+					// 次日 <= 10:00 不算迟到，抵消
+					if (isTimeBefore(startTime, "10:01")) {
+						Integer integer = lateNumMap.get(lateWorkVo.getName());
+						lateNumMap.put(lateWorkVo.getName(), integer - 1);
+						lateDataMap.remove(data.getName()); // 清除已抵消的记录
 					}
 				}
 			}
 
+			// 检查 lateWorkVoMap（一般迟到 09:01-09:30）
+			List<WorkVo> workVos = lateWorkVoMap.get(data.getName());
+			if (workVos != null) {
+				for (WorkVo workVo : workVos) {
+					String newDateTime = workVo.getDataTime().split(" ")[0];
+					if (newDateTime.equals(dateTime)) {
+						// 次日09:01-09:30的迟到，加班到次日10:00前都可以抵消
+						Integer integer = lateNumMap.get(workVo.getName());
+						lateNumMap.put(workVo.getName(), integer - 1);
+						// 从列表中移除已抵消的记录
+						workVos.remove(workVo);
+						break;
+					}
+				}
+			}
 
+		}else if (!isTimeBefore(data.getEndTime(), "23:00")) {
+			// 加班到23:00后，次日09:30前算正常
+
+			// 处理日期
+			String dateTime = data.getDataTime().split(" ")[0];
+			// 获取次日的日期
+			dateTime = subtractOneDayFromDate(dateTime, 1);
+
+			// 检查 lateDataMap（严重迟到 >=09:30）
+			WorkVo lateWorkVo = lateDataMap.get(data.getName());
+			if (lateWorkVo != null) {
+				String newDateTime = lateWorkVo.getDataTime().split(" ")[0];
+				if (newDateTime.equals(dateTime)) {
+					String startTime = lateWorkVo.getStartTime();
+					// 次日 <= 09:30 不算迟到，抵消
+					if (isTimeBefore(startTime, "09:31")) {
+						Integer integer = lateNumMap.get(lateWorkVo.getName());
+						lateNumMap.put(lateWorkVo.getName(), integer - 1);
+						lateDataMap.remove(data.getName()); // 清除已抵消的记录
+					}
+				}
+			}
+
+			// 检查 lateWorkVoMap（一般迟到 09:01-09:30）
+			List<WorkVo> workVos = lateWorkVoMap.get(data.getName());
+			if (workVos != null){
+				for (WorkVo workVo : workVos) {
+					String newDateTime = workVo.getDataTime().split(" ")[0];
+					if (newDateTime.equals(dateTime)) {
+						Integer integer = lateNumMap.get(workVo.getName());
+						lateNumMap.put(workVo.getName(), integer - 1);
+						// 从列表中移除已抵消的记录
+						workVos.remove(workVo);
+						break;
+					}
+				}
+			}
 		}
 
 
