@@ -239,7 +239,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		}else if ((dataTime.contains("星期六") || dataTime.contains("星期日")) && isTimeBefore(data.getStartTime(), "10:01")){
 			data.setStartTime("09:00");
 		}else if ((dataTime.contains("星期六") || dataTime.contains("星期日")) && !isTimeBefore(data.getStartTime(), "10:00")){
-			lateNumMap.put(data.getName(),lateNumMap.get(data.getName())+1);
+			// lateNumMap.put(data.getName(),lateNumMap.get(data.getName())+1);
 			data.setStartTime("09:40");
 		}
 
@@ -545,7 +545,12 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		// 符合条件则累加加班时间
 		if (isRestDay && workHourNum.matches("[-+]?[0-9]*\\.?[0-9]+") ){
 			Float num = restDayNumMap.get(work.getName()) == null? 0f :restDayNumMap.get(work.getName());
-			restDayNumMap.put(work.getName(),num + Float.valueOf(workHourNum));
+			// 周末一天最多按8小时计算
+			Float hours = Float.valueOf(workHourNum);
+			if (hours > 8f) {
+				hours = 8f;
+			}
+			restDayNumMap.put(work.getName(),num + hours);
 
 			Integer subsidyNum = subsidyNumMap.get(work.getName());
 			int newNum = 0;
