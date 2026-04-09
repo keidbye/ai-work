@@ -92,11 +92,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	public static void main(String[] args) {
 
 		// 1.设置写入文件夹地址和excel文件名称
-		String filename = "/opt/excel/上下班打卡_日报_20260101-20260131(1).xlsx";
+		String filename = "/root/.openclaw/workspace/ai-work/考勤明细26.3.xlsx";
 
-		// 设置休息日列表
+		// 设置休息日列表 (2026年3月)
 		List<String> restDayList = Arrays.asList(new String[] {
-			"2026/01/01", "2026/01/02", "2026/01/03","2026/01/10", "2026/01/11", "2026/01/18", "2026/01/24", "2026/01/25"
+			"2026/03/01", "2026/03/07", "2026/03/08", "2026/03/15", "2026/03/21", "2026/03/22", "2026/03/29"
 		});
 
 		// 设置特殊规则员工名单
