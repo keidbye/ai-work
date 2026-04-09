@@ -118,6 +118,7 @@ public class AttendanceController {
                 data.setLeaveNum(getIntValue(item.get("leaveNum")));
                 data.setNoCheckInNum(getIntValue(item.get("noCheckInNum")));
                 data.setLateNum(getIntValue(item.get("lateNum")));
+                data.setSupplementNum(getIntValue(item.get("supplementNum")));
                 data.setRestDayWordNum(getFloatValue(item.get("restDayWordNum")));
                 data.setSubsidyNum(getIntValue(item.get("subsidyNum")));
                 data.setHour19To21Num(getFloatValue(item.get("hour19To21Num")));
@@ -204,6 +205,9 @@ public class AttendanceController {
 
         @ExcelProperty("迟到天数")
         private Integer lateNum;
+
+        @ExcelProperty("补卡申请次数")
+        private Integer supplementNum;
 
         @ExcelProperty("周末小时")
         private Float restDayWordNum;

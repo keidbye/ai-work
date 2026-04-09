@@ -63,6 +63,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		this.subsidyNumMap = new HashMap<>();
 		this.hour19To21NumMap = new HashMap<>();
 		this.hour21To05NumMap = new HashMap<>();
+		this.supplementMap = new HashMap<>();
 		this.countMap = new ArrayList<>();
 	}
 
@@ -111,6 +112,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		for (Map<String, Object> map : counts) {
 			System.out.println(map.get("name") + "-天数：" + map.get("dayNum") + "-小时数：" + map.get("hourNum") + "-请假数："
 					+ map.get("leaveNum") + "-未打卡数：" + map.get("noCheckInNum") + "-迟到天数：" + map.get("lateNum")
+					+ "-补卡申请次数：" + map.get("supplementNum")
 					+ "-周末小时：" + map.get("restDayWordNum") + "-周末补贴次数：" + map.get("subsidyNum")
 					+ "-19:00-21:00加班小时：" + map.get("hour19To21Num") + "-21:00-05:00加班小时：" + map.get("hour21To05Num"));
 		}
@@ -165,6 +167,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	 * 21:00-次日05:00 加班小时数（特殊规则员工）
 	 */
 	private Map<String,Float> hour21To05NumMap = new HashMap<>();
+
+	/**
+	 * 补卡申请次数
+	 */
+	private Map<String,Integer> supplementMap = new HashMap<>();
 
 	/**
 	 * 缓存的数据
@@ -222,6 +229,19 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			Integer leaveNum = leaveMap.get(data.getName()) ;
 			leaveMap.put(data.getName(),leaveNum == null ? 1:leaveNum+1);
 			return;
+		}
+
+		// 统计补卡申请次数（同一天可能有多条，按"补卡申请"出现次数计算）
+		if (!StringUtils.isEmpty(vacation) && vacation.contains("补卡申请")) {
+			// 计算补卡申请出现次数
+			int count = 0;
+			int idx = 0;
+			while ((idx = vacation.indexOf("补卡申请", idx)) != -1) {
+				count++;
+				idx += "补卡申请".length();
+			}
+			Integer supplementNum = supplementMap.get(data.getName());
+			supplementMap.put(data.getName(), supplementNum == null ? count : supplementNum + count);
 		}
 
 
@@ -405,6 +425,7 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			map.put("noCheckInNum", noCheckIn>0?noCheckIn:0);
 			map.put("lateNum", lateNumMap.get(key));
 			map.put("leaveNum", leaveMap.get(key) == null?0:leaveMap.get(key));
+			map.put("supplementNum", supplementMap.get(key) == null ? 0 : supplementMap.get(key));
 			map.put("restDayWordNum", restDayNumMap.get(key) == null?0:roundToOneDecimal(restDayNumMap.get(key)));
 
 			// 特殊规则员工不统计周末补贴次数
