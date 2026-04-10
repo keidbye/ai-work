@@ -309,10 +309,45 @@
         }
 
         .detail-tip {
-            cursor: help;
+            position: relative;
+            cursor: pointer;
             border-bottom: 1px dashed #667eea;
             color: #667eea;
             font-weight: 600;
+        }
+
+        .detail-tip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50%;
+            bottom: 100%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 400;
+            white-space: pre-line;
+            z-index: 100;
+            max-width: 300px;
+            min-width: 120px;
+            text-align: left;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            line-height: 1.6;
+            pointer-events: none;
+        }
+
+        .detail-tip:hover::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% - 4px);
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+            z-index: 100;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -552,7 +587,8 @@
                 function detailCell(value, detailKey) {
                     const details = item[detailKey];
                     if (value > 0 && details && details.length > 0) {
-                        return `<td><span class="detail-tip" title="${details.join('\\n')}">${value}</span></td>`;
+                        const tooltipText = details.join('\n').replace(/"/g, '&quot;');
+                        return `<td><span class="detail-tip" data-tooltip="${tooltipText}">${value}</span></td>`;
                     }
                     return `<td>${value}</td>`;
                 }
