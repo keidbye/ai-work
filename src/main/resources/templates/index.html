@@ -307,6 +307,13 @@
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+
+        .detail-tip {
+            cursor: help;
+            border-bottom: 1px dashed #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -537,14 +544,27 @@
                     tr.classList.add('special-employee');
                 }
 
+                const leaveNum = item.leaveNum || 0;
+                const noCheckInNum = item.noCheckInNum || 0;
+                const lateNum = item.lateNum || 0;
+                const supplementNum = item.supplementNum || 0;
+
+                function detailCell(value, detailKey) {
+                    const details = item[detailKey];
+                    if (value > 0 && details && details.length > 0) {
+                        return `<td><span class="detail-tip" title="${details.join('\\n')}">${value}</span></td>`;
+                    }
+                    return `<td>${value}</td>`;
+                }
+
                 tr.innerHTML = `
                     <td>${item.name}</td>
                     <td>${item.dayNum || 0}</td>
                     <td>${item.hourNum || 0}</td>
-                    <td>${item.leaveNum || 0}</td>
-                    <td>${item.noCheckInNum || 0}</td>
-                    <td>${item.lateNum || 0}</td>
-                    <td>${item.supplementNum || 0}</td>
+                    ${detailCell(leaveNum, 'leaveDetail')}
+                    ${detailCell(noCheckInNum, 'noCheckInDetail')}
+                    ${detailCell(lateNum, 'lateDetail')}
+                    ${detailCell(supplementNum, 'supplementDetail')}
                     <td>${item.restDayWordNum || 0}</td>
                     <td>${item.subsidyNum || 0}</td>
                     <td>${item.hour19To21Num || 0}</td>

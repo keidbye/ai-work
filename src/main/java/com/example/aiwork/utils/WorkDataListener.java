@@ -64,6 +64,10 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		this.hour19To21NumMap = new HashMap<>();
 		this.hour21To05NumMap = new HashMap<>();
 		this.supplementMap = new HashMap<>();
+		this.leaveDetailMap = new HashMap<>();
+		this.lateDetailMap = new HashMap<>();
+		this.noCheckInDetailMap = new HashMap<>();
+		this.supplementDetailMap = new HashMap<>();
 		this.countMap = new ArrayList<>();
 	}
 
@@ -174,6 +178,26 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 	private Map<String,Integer> supplementMap = new HashMap<>();
 
 	/**
+	 * 请假明细：姓名 -> ["2026/03/11 事假", "2026/03/16 调休假"]
+	 */
+	private Map<String, List<String>> leaveDetailMap = new HashMap<>();
+
+	/**
+	 * 迟到明细：姓名 -> ["2026/03/15 09:25", "2026/03/20 09:35"]
+	 */
+	private Map<String, List<String>> lateDetailMap = new HashMap<>();
+
+	/**
+	 * 未打卡明细：姓名 -> ["2026/03/18 下班未打卡"]
+	 */
+	private Map<String, List<String>> noCheckInDetailMap = new HashMap<>();
+
+	/**
+	 * 补卡申请明细：姓名 -> ["2026/03/05 补卡申请"]
+	 */
+	private Map<String, List<String>> supplementDetailMap = new HashMap<>();
+
+	/**
 	 * 缓存的数据
 	 */
 	private List<WorkVo> cachedDataList = ListUtils.newArrayListWithExpectedSize(BATCH_COUNT);
@@ -228,6 +252,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 		if (!StringUtils.isEmpty(vacation) && vacationKey.stream().anyMatch(vacation::contains)){
 			Integer leaveNum = leaveMap.get(data.getName()) ;
 			leaveMap.put(data.getName(),leaveNum == null ? 1:leaveNum+1);
+			// 收集请假明细
+			String dateStr = dataTime != null && dataTime.contains(" ") ? dataTime.split(" ")[0] : dataTime;
+			String leaveType = vacationKey.stream().filter(vacation::contains).findFirst().orElse("请假");
+			List<String> details = leaveDetailMap.computeIfAbsent(data.getName(), k -> new ArrayList<>());
+			details.add(dateStr + " " + leaveType);
 			return;
 		}
 
@@ -242,6 +271,12 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			}
 			Integer supplementNum = supplementMap.get(data.getName());
 			supplementMap.put(data.getName(), supplementNum == null ? count : supplementNum + count);
+			// 收集补卡申请明细
+			String dateStr = dataTime != null && dataTime.contains(" ") ? dataTime.split(" ")[0] : dataTime;
+			List<String> supplementDetails = supplementDetailMap.computeIfAbsent(data.getName(), k -> new ArrayList<>());
+			for (int i = 0; i < count; i++) {
+				supplementDetails.add(dateStr + " 补卡申请");
+			}
 		}
 
 
@@ -272,9 +307,17 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			// 严重迟到，计入迟到次数
 			lateDataMap.put(data.getName(), data);
 			lateNumMap.put(data.getName(), lateNumMap.get(data.getName()) + 1);
+			// 收集迟到明细
+			String dateStr = dataTime.split(" ")[0];
+			List<String> lateDetails = lateDetailMap.computeIfAbsent(data.getName(), k -> new ArrayList<>());
+			lateDetails.add(dateStr + " " + data.getStartTime());
 		}else if (!isTimeBefore(data.getStartTime(), "09:01")) {
 			// 统计
 			lateNumMap.put(data.getName(),lateNumMap.get(data.getName())+1);
+			// 收集迟到明细
+			String dateStr = dataTime.split(" ")[0];
+			List<String> lateDetails = lateDetailMap.computeIfAbsent(data.getName(), k -> new ArrayList<>());
+			lateDetails.add(dateStr + " " + data.getStartTime());
 
 			List<WorkVo> workVos = lateWorkVoMap.get(data.getName());
 			if (workVos == null){
@@ -306,6 +349,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 						Integer integer = lateNumMap.get(lateWorkVo.getName());
 						lateNumMap.put(lateWorkVo.getName(), integer - 1);
 						lateDataMap.remove(data.getName()); // 清除已抵消的记录
+						// 移除迟到明细
+						List<String> lateDetails = lateDetailMap.get(data.getName());
+						if (lateDetails != null) {
+							lateDetails.removeIf(d -> d.startsWith(newDateTime));
+						}
 					}
 				}
 			}
@@ -320,6 +368,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 						Integer integer = lateNumMap.get(workVo.getName());
 						lateNumMap.put(workVo.getName(), integer - 1);
 						// 从列表中移除已抵消的记录
+						// 移除迟到明细
+						List<String> lateDetails = lateDetailMap.get(workVo.getName());
+						if (lateDetails != null) {
+							lateDetails.removeIf(d -> d.startsWith(newDateTime));
+						}
 						workVos.remove(workVo);
 						break;
 					}
@@ -345,6 +398,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 						Integer integer = lateNumMap.get(lateWorkVo.getName());
 						lateNumMap.put(lateWorkVo.getName(), integer - 1);
 						lateDataMap.remove(data.getName()); // 清除已抵消的记录
+						// 移除迟到明细
+						List<String> lateDetails = lateDetailMap.get(data.getName());
+						if (lateDetails != null) {
+							lateDetails.removeIf(d -> d.startsWith(newDateTime));
+						}
 					}
 				}
 			}
@@ -358,6 +416,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 						Integer integer = lateNumMap.get(workVo.getName());
 						lateNumMap.put(workVo.getName(), integer - 1);
 						// 从列表中移除已抵消的记录
+						// 移除迟到明细
+						List<String> lateDetails = lateDetailMap.get(workVo.getName());
+						if (lateDetails != null) {
+							lateDetails.removeIf(d -> d.startsWith(newDateTime));
+						}
 						workVos.remove(workVo);
 						break;
 					}
@@ -411,6 +474,11 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 				// 未打卡天数：下班时间<10:00就算缺卡
 				if (isTimeBefore(workVo.getEndTime(), "10:00")) {
 					noCheckInNum.getAndIncrement();
+					// 收集未打卡明细
+					String dateStr = workVo.getDataTime() != null && workVo.getDataTime().contains(" ")
+						? workVo.getDataTime().split(" ")[0] : workVo.getDataTime();
+					List<String> noCheckInDetails = noCheckInDetailMap.computeIfAbsent(key, k -> new ArrayList<>());
+					noCheckInDetails.add(dateStr + " 下班未打卡");
 				}
 
 			});
@@ -435,6 +503,12 @@ public class WorkDataListener implements ReadListener<WorkVo> {
 			// 特殊规则员工：添加两个时段的加班小时数
 			map.put("hour19To21Num", hour19To21NumMap.getOrDefault(key, 0f));
 			map.put("hour21To05Num", hour21To05NumMap.getOrDefault(key, 0f));
+
+			// 添加明细数据
+			map.put("leaveDetail", leaveDetailMap.getOrDefault(key, new ArrayList<>()));
+			map.put("lateDetail", lateDetailMap.getOrDefault(key, new ArrayList<>()));
+			map.put("noCheckInDetail", noCheckInDetailMap.getOrDefault(key, new ArrayList<>()));
+			map.put("supplementDetail", supplementDetailMap.getOrDefault(key, new ArrayList<>()));
 
 			countMap.add(map);
 		}
